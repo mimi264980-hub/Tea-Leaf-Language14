@@ -59,8 +59,139 @@
             min-height: 100vh;
             margin: 0;
         }
+/* --- To-Do List Styles --- */
+#todo-modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #4a0606; z-index: 10005; flex-direction: column;
+}
+.todo-header {
+    background: #6e0d0d; color: #d4af37; padding: 20px;
+    font-size: 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 2px solid #d4af37;
+}
+.todo-content { flex: 1; padding: 15px; overflow-y: auto; }
+.task {
+    background: #fdf5e6; color: #6e0d0d; padding: 15px;
+    border-radius: 15px; margin-bottom: 10px; display: flex;
+    justify-content: space-between; align-items: center; border-left: 5px solid #d4af37;
+}
+.task.completed { opacity: 0.5; filter: grayscale(1); }
+.todo-controls {
+    padding: 20px; background: #6e0d0d; border-top: 2px solid #d4af37;
+    padding-bottom: 30px;
+}
+.input-group { display: flex; gap: 8px; margin-bottom: 10px; }
+.todo-input { 
+    flex: 1; padding: 12px; border: 1px solid #d4af37; border-radius: 10px; 
+    background: #fdf5e6; outline: none;
+}
+.btn-todo-add { 
+    background: #d4af37; color: #6e0d0d; border: none; 
+    padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer;
+}
+     <div id="todo-modal">
+    <div class="todo-header">
+        <span>လုပ်ဆောင်ရန် အစီအစဉ်</span>
+        <button onclick="toggleTodo()" style="background:none; border:none; color:#d4af37; cursor:pointer;">
+            <span class="material-icons-round">close</span>
+        </button>
+    </div>
+    <div class="todo-content" id="taskList"></div>
+    <div class="todo-controls">
+        <div class="input-group">
+            <input id="taskInput" class="todo-input" placeholder="အသစ်ထည့်ရန်...">
+            <button class="btn-todo-add" onclick="addTask()">ပေါင်းထည့်</button>
+        </div>
+        <div class="input-group">
+            <input type="date" id="dueDate" class="todo-input" style="flex:0.6;">
+            <select id="category" class="todo-input" style="flex:0.4;">
+                <option value="အထွေထွေ">အထွေထွေ</option>
+                <option value="အလုပ်">အလုပ်</option>
+                <option value="စာသင်">စာသင်</option>
+            </select>
+        </div>
+    </div>
+</div>
 
-        
+<button onclick="toggleTodo()">To-Do List ဖွင့်ရန်</button>
+        // To-Do Logic
+let tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+let lastDate = localStorage.getItem("lastSavedDate");
+
+// Modal အဖွင့်အပိတ် လုပ်ဆောင်ချက်
+function toggleTodo() {
+    const m = document.getElementById('todo-modal');
+    m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+}
+
+// နေ့စဉ် Reset လုပ်ရန် ရှိ၊ မရှိ စစ်ဆေးခြင်း
+function checkDailyReset() {
+    let today = new Date().toDateString();
+    if (lastDate && today !== lastDate) {
+        tasks = tasks.filter(t => !t.done); // မပြီးသေးတဲ့ အလုပ်တွေကိုပဲ ချန်ထားမယ်
+        saveTasks();
+    }
+    localStorage.setItem("lastSavedDate", today);
+}
+
+// Task များ သိမ်းဆည်းခြင်း
+function saveTasks() { 
+    localStorage.setItem("tasks", JSON.stringify(tasks)); 
+}
+
+// Task များကို မျက်နှာပြင်ပေါ်တွင် ပြသခြင်း
+function renderTasks() {
+    let list = document.getElementById("taskList");
+    list.innerHTML = "";
+    tasks.forEach((t, i) => {
+        let div = document.createElement("div");
+        div.className = "task" + (t.done ? " completed" : "");
+        div.innerHTML = `
+            <div><b>${t.text}</b> <br><small>📅 ${t.date || "ရက်စွဲမရှိ"} [${t.category}]</small></div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" ${t.done ? "checked" : ""} onclick="toggleTask(${i})" style="transform: scale(1.3);">
+                <button onclick="deleteTask(${i})" style="border:none; background:none; color:red;">
+                    <span class="material-icons-round">delete</span>
+                </button>
+            </div>`;
+        list.appendChild(div);
+    });
+}
+
+// Task အသစ်ထည့်ခြင်း
+function addTask() {
+    let text = document.getElementById("taskInput").value;
+    if (!text) return;
+    tasks.push({ 
+        text, 
+        date: document.getElementById("dueDate").value, 
+        category: document.getElementById("category").value, 
+        done: false 
+    });
+    document.getElementById("taskInput").value = "";
+    saveTasks(); 
+    renderTasks();
+}
+
+// Task တစ်ခုကို ပြီးကြောင်း/မပြီးကြောင်း အမှတ်အသားလုပ်ခြင်း
+function toggleTask(i) { 
+    tasks[i].done = !tasks[i].done; 
+    saveTasks(); 
+    renderTasks(); 
+}
+
+// Task တစ်ခုကို ဖျက်ခြင်း
+function deleteTask(i) { 
+    tasks.splice(i, 1); 
+    saveTasks(); 
+    renderTasks(); 
+}
+
+// စစချင်း Load ဖြစ်ချိန်မှာ Run ရမယ့်အရာများ
+window.onload = () => {
+    checkDailyReset();
+    renderTasks();
+};
         /* --- Settings & Switch Styles --- */
         .switch { position: relative; display: inline-block; width: 46px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
